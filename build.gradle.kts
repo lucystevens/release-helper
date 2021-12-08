@@ -1,14 +1,35 @@
 plugins {
     // Apply the Java Gradle plugin development plugin to add support for developing Gradle plugins
     `java-gradle-plugin`
+    `maven-publish`
+    id("com.gradle.plugin-publish") version "0.12.0"
 
     // Apply the Kotlin JVM plugin to add support for Kotlin.
     id("org.jetbrains.kotlin.jvm") version "1.5.32"
 }
 
+group = "uk.co.lukestevens"
+
 repositories {
     mavenLocal()
     mavenCentral()
+}
+
+pluginBundle {
+    website = "https://github.com/lukecmstevens/release-helper"
+    vcsUrl = "https://github.com/lukecmstevens/release-helper"
+    tags = listOf("githubactions", "versioning")
+}
+
+gradlePlugin {
+    plugins {
+        create("ReleaseHelperPlugin") {
+            id = "uk.co.lukestevens.plugins.release-helper"
+            displayName = "Release Helper Plugin"
+            description = "A gradle plugin for simplifying parts of the release process"
+            implementationClass = "uk.co.lukestevens.plugins.ReleaseHelperPlugin"
+        }
+    }
 }
 
 dependencies {
@@ -25,20 +46,12 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 }
 
-gradlePlugin {
-    plugins {
-        create("ReleaseHelperPlugin") {
-            id = "uk.co.lukestevens.plugins.release-helper"
-            implementationClass = "uk.co.lukestevens.plugins.ReleaseHelperPlugin"
-        }
-    }
-}
-
 // Add a source set for the functional test suite
 val functionalTestSourceSet = sourceSets.create("functionalTest") { }
 
 gradlePlugin.testSourceSets(functionalTestSourceSet)
-configurations.getByName("functionalTestImplementation").extendsFrom(configurations.getByName("testImplementation"))
+configurations.getByName("functionalTestImplementation")
+    .extendsFrom(configurations.getByName("testImplementation"))
 
 // Add a task to run the functional tests
 val functionalTest by tasks.creating(Test::class) {

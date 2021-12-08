@@ -6,11 +6,12 @@ import java.io.File
 
 class ReleaseHelperPlugin: Plugin<Project> {
     override fun apply(project: Project) {
-        val extension = project.extensions.create("release-helper", ReleaseHelperExtension::class.java)
+        val extension = project.extensions.create("releaseHelper", ReleaseHelperExtension::class.java)
+        val defaultExportFile = File(System.getenv("GITHUB_ENV")?: "export.properties")
 
         project.tasks.register("exportProperties") { task ->
             task.doLast {
-                extension.exportFile.getOrElse(File(System.getenv("GITHUB_ENV"))).bufferedWriter().use {
+                extension.exportFile.getOrElse(defaultExportFile).bufferedWriter().use {
                     it.appendLine("PROJECT_VERSION=${project.version}")
                     it.appendLine("PROJECT_NAME=${project.name}")
                 }
@@ -22,7 +23,7 @@ class ReleaseHelperPlugin: Plugin<Project> {
                 val currentVersion = project.version.toString()
                 val newVersion = removeSuffix(currentVersion)
                 if(currentVersion != newVersion) {
-                    setVersion(newVersion)
+                    project.writeVersion(newVersion)
                 }
             }
         }
@@ -31,7 +32,7 @@ class ReleaseHelperPlugin: Plugin<Project> {
             task.doLast {
                 val currentVersion = project.version.toString()
                 val finalVersion = removeSuffix(currentVersion)
-                val versionParts = finalVersion.split("\\.")
+                val versionParts = finalVersion.split(".")
                 if(versionParts.size < 2){
                     throw IllegalArgumentException("Version must have at least major and minor identifier")
                 }
@@ -45,13 +46,13 @@ class ReleaseHelperPlugin: Plugin<Project> {
                 }
                 newVersion.append(extension.versionSuffix.get())
 
-                setVersion(newVersion.toString())
+                project.writeVersion(newVersion.toString())
             }
         }
     }
 
-    private fun setVersion(newVersion: String) {
-        File("gradle.properties")
+    private fun Project.writeVersion(newVersion: String) {
+        File(projectDir, "gradle.properties")
             .bufferedWriter().use {
                 it.appendLine("version=$newVersion")
             }
