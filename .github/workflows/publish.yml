@@ -1,0 +1,59 @@
+# This is a temporary workflow with hard-coded values for the first plugin release
+name: publish
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GH_USER: lukecmstevens
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      # Finalise version
+      - name: Finalise version
+        run: echo "version=0.1.0" > gradle.properties
+
+      # Build and publish package (including running tests)
+
+      - name: Build with gradle
+        run: ./gradlew clean check build publish
+
+      - name: Publish to plugin portal
+        run: ./gradlew publishPlugins -Pgradle.publish.key=${{ secrets.GRADLE_KEY }} -Pgradle.publish.secret=${{ secrets.GRADLE_SECRET }}
+
+      # We finalised the version earlier, now committing, tagging, and pushing to main
+
+      - name: Commit and tag version update
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: main
+          commit_message: Release version 0.1.0
+          tagging_message: v0.1.0
+
+      # Create a release
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v0.1.0
+          release_name: Release 0.1.0
+          body_path: changelog.md
+
