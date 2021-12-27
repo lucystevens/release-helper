@@ -44,7 +44,7 @@ class ReleaseHelperPlugin: Plugin<Project> {
                 for(i in 2 until versionParts.size){
                     newVersion.append(".0") // zero all other parts
                 }
-                newVersion.append(extension.versionSuffix.get())
+                newVersion.append(extension.versionSuffix.getOrElse(""))
 
                 project.writeVersion(newVersion.toString())
             }
